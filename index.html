@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Search</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .match-equal {
+        background-color: pink;
+      }
+      .match-not-equal {
+        background-color: red;
+      }
+      #results {
+        max-height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Data Search Tool</h1>
+      <form id="searchForm">
+        <div class="form-group">
+          <label>Delimiter:</label><br />
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="delimiter"
+              id="delimiter1"
+              value="1"
+            />
+            <label class="form-check-label" for="delimiter1">1</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="delimiter"
+              id="delimiter2"
+              value="2"
+            />
+            <label class="form-check-label" for="delimiter2">2</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="delimiter"
+              id="delimiter3"
+              value="3"
+              checked
+            />
+            <label class="form-check-label" for="delimiter3">3</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pattern">Pattern:</label>
+          <input type="text" class="form-control" id="pattern" required />
+        </div>
+        <div class="form-group">
+          <label for="data">Data:</label>
+          <textarea
+            class="form-control"
+            id="data"
+            rows="10"
+            required
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">ค้นหา</button>
+      </form>
+      <h2 class="mt-5">Results:</h2>
+      <div id="results" class="border p-3"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const delimiter = document.querySelector(
+            'input[name="delimiter"]:checked'
+          ).value;
+          const pattern = document.getElementById("pattern").value;
+          const data = document.getElementById("data").value;
+
+          function countChars(s) {
+            const counter = {};
+            for (let char of s) {
+              if (char === "1" || char === "4") {
+                counter["1"] = (counter["1"] || 0) + 1;
+              } else {
+                counter[char] = (counter[char] || 0) + 1;
+              }
+            }
+            return counter;
+          }
+
+          function compareCounts(count1, count2) {
+            for (let char in count1) {
+              if (count1[char] > (count2[char] || 0)) {
+                return false;
+              }
+            }
+            return true;
+          }
+
+          function findMatches(data, pattern, delimiter) {
+            const patternCounts = countChars(pattern);
+            const parts = data.split(delimiter);
+            const matches = [];
+            let index = 0;
+
+            parts.forEach((part) => {
+              const substringCounts = countChars(part);
+              if (compareCounts(patternCounts, substringCounts)) {
+                matches.push({
+                  substring: part,
+                  start: index,
+                  end: index + part.length,
+                });
+              }
+              index += part.length + delimiter.length;
+            });
+
+            return matches;
+          }
+
+          const matches = findMatches(data, pattern, delimiter);
+          let resultHtml = "";
+          let lastIndex = 0;
+
+          matches.forEach((match) => {
+            const { substring, start, end } = match;
+            resultHtml += data.slice(lastIndex, start);
+            const substringCounts = countChars(substring);
+            const isEqual = Object.keys(substringCounts).every(
+              (char) => substringCounts[char] === countChars(pattern)[char]
+            );
+            resultHtml += `<span class="${
+              isEqual ? "match-equal" : "match-not-equal"
+            }">${substring}</span>`;
+            lastIndex = end;
+          });
+
+          resultHtml += data.slice(lastIndex);
+          document.getElementById("results").innerHTML = resultHtml;
+        });
+    </script>
+  </body>
+</html>
